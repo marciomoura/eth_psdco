@@ -63,33 +63,43 @@ for i = 1 : Max_iter
     [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
     [ h ] = f_measFunc_h_v2021( V, theta, Y_bus, topo, ind_meas, N_meas);
    
-   
+      
     tic;
-    switch linsolver
-        case 1 % Direct inverse
-            % 4. Compute G(x(k))
-            G = H' * W * H;  
-            % 5. Compute right hand side g(x(k))
-            g = -(H')*W*(z-h);
-            dx = -inv(G)*g;
-        case 2 % Cholesky
-            % 4. Compute G(x(k))
-            G = H' * W * H;  
-            % 5. Compute right hand side g(x(k))
-            g = -(H')*W*(z-h);
-            dx = -G\g;
-        case 3 % Orthogonal Decomposition
-            Htilda = Wsqrt*H;
-            [Q,R,e]=qr(Htilda,0);
-            b = Wsqrt*(z-h);
-            dx(e,:) = R\(Q\b);
-        case 4 % Hybrid
-            Htilda = Wsqrt*H;
-            p=colamd(Htilda);
-            R=qr(Htilda(:,p),0);
-            b = Htilda' * Wsqrt * (z-h);
-            dx(p,:) = R'*R\(b(p,:)) ;   
+    switch H_decoupled
+        case 0 % Full algorithm
+            switch linsolver
+                case 1 % Direct inverse
+                    % 4. Compute G(x(k))
+                    G = H' * W * H;  
+                    % 5. Compute right hand side g(x(k))
+                    g = -(H')*W*(z-h);
+                    dx = -inv(G)*g;
+                case 2 % Cholesky
+                    % 4. Compute G(x(k))
+                    G = H' * W * H;  
+                    % 5. Compute right hand side g(x(k))
+                    g = -(H')*W*(z-h);
+                    dx = -G\g;
+                case 3 % Orthogonal Decomposition
+                    Htilda = Wsqrt*H;
+                    [Q,R,e]=qr(Htilda,0);
+                    b = Wsqrt*(z-h);
+                    dx(e,:) = R\(Q'*b);
+                case 4 % Hybrid
+                    Htilda = Wsqrt*H;
+                    p=colamd(Htilda);
+                    R=qr(Htilda(:,p),0);
+                    b = Htilda' * Wsqrt * (z-h);
+                    dx(p,:) = R'*R\(b(p,:)) ;   
+                otherwise
+            end;
+        case 1 % Decoupled algorithm
+             % 1. Decoupled formulation 
+             G = H' * W * H;  
+             g = -(H')*W*(z-h);
+             dx = -G\g;
         otherwise
+            % error
     end;
     time = time + toc;
     
