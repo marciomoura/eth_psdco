@@ -86,7 +86,7 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
 %STUDENT CODE 4
 
 % Residual Analysis
-x_est = [V_SE0; theta_SE0(2:size(theta_SE0),1)]
+x_est = [V_SE0; theta_SE0]
 
 % Mr. Jacoby
 [ H ] = f_measJac_H_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
@@ -97,17 +97,12 @@ G = H'*W*H;
 % K = H * inv(G) * H' * W 
 K = H*inv(G)*(H')*W;
 
-% Sensitivity matrix S = (I-K)
-S = (eye(size(K)) - K)
-
 % e = z_delta-H*delta_x
-% error = H * estimated-state
-e = H*x_est - z;
+% r = (I-K)*e
+r = (eye(size(K))
 
-% residual
-r = S*e;
 
-plot(r)
+
 
 %% BAD DATA CORRECTION
 %STUDENT CODE 5
