@@ -1,7 +1,7 @@
 clc;clear;
 %LOADING THE DATA
-%load GoodMeasurement_14_bus.mat;
-load GoodMeasurement_1354_bus.mat;
+load GoodMeasurement_14_bus.mat;
+%load GoodMeasurement_1354_bus.mat;
 
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
@@ -59,7 +59,7 @@ end;
 msr_std = all_std(~isnan(all_std));
 
 % Diagonal elements of W is given by 1/(std^2)
-W = inv(diag(msr_std.^2));
+W = sparse(inv(diag(msr_std.^2)));
 Wsqrt = sqrt(W);
  
 % %choosing the initial point (use flat start)
@@ -101,9 +101,9 @@ fprintf('Number iterations: %d \n', it_num);
 % %STUDENT CODE 6
 % %NOTE: use the following function (the description of its inputs and
 % %outputs can be found inside the function)
-% [ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
-%             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
-% 
+[ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+            ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+
 
 
 

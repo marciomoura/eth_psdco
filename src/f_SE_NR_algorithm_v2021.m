@@ -53,20 +53,19 @@ function [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2
 
 %STUDENT CODE
 %for computing matrix H and vector h, use the following functions:
-
 eps_all = 0;
 time = 0;
 convergence = 0;
 it_num = 0;
 
-for i = 1 : Max_iter
-    [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
-    [ h ] = f_measFunc_h_v2021( V, theta, Y_bus, topo, ind_meas, N_meas);
-   
-      
-    tic;
-    switch H_decoupled
-        case 0 % Full algorithm
+switch H_decoupled
+    case 0
+        for i = 1 : Max_iter
+            [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
+            [ h ] = f_measFunc_h_v2021( V, theta, Y_bus, topo, ind_meas, N_meas);
+
+
+            tic;
             switch linsolver
                 case 1 % Direct inverse
                     % 4. Compute G(x(k))
@@ -93,26 +92,51 @@ for i = 1 : Max_iter
                     dx(p,:) = R'*R\(b(p,:)) ;   
                 otherwise
             end;
-        case 1 % Decoupled algorithm
-             % 1. Decoupled formulation 
-             G = H' * W * H;  
-             g = -(H')*W*(z-h);
-             dx = -G\g;
-        otherwise
-            % error
-    end;
-    time = time + toc;
-    
-    if max(abs(dx)) <= eps_tol    
-        convergence = 1;
-        eps_all = abs(dx);
-        it_num = i;
-        break;
-    else
-        % [ Theta; V ] - First index is Bus 1 reference.
-        theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx(1:size(theta,1)-1,1);
-        V = V + dx(size(theta,1):size(dx,1),1);
-    end;
-end;
+            time = time + toc;
+
+            if max(abs(dx)) <= eps_tol    
+                convergence = 1;
+                eps_all = abs(dx);
+                it_num = i;
+                break;
+            else
+                % [ Theta; V ] - First index is Bus 1 reference.
+                theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx(1:size(theta,1)-1,1);
+                V = V + dx(size(theta,1):size(dx,1),1);
+            end
+        end
+        
+    case 1
+        tic;
+        [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
+        H_w = H' * W;
+        G = H_w * H;
+
+        G_th = G(1:topo.nBus-1,1:topo.nBus-1);
+        G_u = G(topo.nBus:2*topo.nBus-1,topo.nBus:2*topo.nBus-1);
+        
+        L_th = chol(G_th);
+        L_u = chol(G_u);
+        for i = 1:Max_iter
+            [ h ] = f_measFunc_h_v2021( V, theta, Y_bus, topo, ind_meas, N_meas);
+            rhs = H_w * (z - h);
+            rhs_th = rhs(1:topo.nBus-1);
+            rhs_u = rhs(topo.nBus:2*topo.nBus-1);
+            
+            dx_th = L_th\(L_th'\rhs_th);
+            dx_u = L_u\(L_u'\rhs_u);
+            if max(abs(dx_u)) <= eps_tol && max(abs(dx_th)) <= eps_tol
+                convergence = 1;
+                it_num = i;
+                break;
+            else
+                % [ Theta; V ] - First index is Bus 1 reference.
+                theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx_th;
+                V = V + dx_u;
+            end
+        end
+        time = time + toc;
+    otherwise
+end
 end
 
