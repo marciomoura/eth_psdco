@@ -54,6 +54,29 @@ function [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2
 %STUDENT CODE
 %for computing matrix H and vector h, use the following functions:
 
+if H_decoupled == 1
+    %create Struct for decoupled Algo
+    pos = 0;
+    names = fieldnames(N_meas);
+    for i = 1:numel(names)
+        name = names{i};
+        eval("pos = pos + N_meas." + name + ";")
+        eval("N_meas_pos." + name + " = pos;")
+    end
+    %create weight matrix
+    diag(W)(N_meas_pos.N_meas_V+1:N_meas_pos.N_meas_Pinj)
+    
+    
+    
+    W_a = 
+    
+    
+    
+    
+    [W(N_meas_pos.N_meas_V+1:N_meas_pos.N_meas_Pinj,N_meas_pos.N_meas_V+1:N_meas_pos.N_meas_Pinj) 0; ...
+           0 W(N_meas_pos.N_meas_Qinj+1:N_meas_pos.N_meas_Pji,N_meas_pos.N_meas_Qinj+1:N_meas_pos.N_meas_Pji)];
+end
+
 eps_all = 0;
 time = 0;
 convergence = 0;
@@ -65,44 +88,65 @@ for i = 1 : Max_iter
    
    
     tic;
-    switch linsolver
-        case 1 % Direct inverse
-            % 4. Compute G(x(k))
-            G = H' * W * H;  
-            % 5. Compute right hand side g(x(k))
-            g = -(H')*W*(z-h);
-            dx = -inv(G)*g;
-        case 2 % Cholesky
-            % 4. Compute G(x(k))
-            G = H' * W * H;  
-            % 5. Compute right hand side g(x(k))
-            g = -(H')*W*(z-h);
-            dx = -G\g;
-        case 3 % Orthogonal Decomposition
-            Htilda = Wsqrt*H;
-            [Q,R,e]=qr(Htilda,0);
-            b = Wsqrt*(z-h);
-            dx(e,:) = R\(Q\b);
-        case 4 % Hybrid
-            Htilda = Wsqrt*H;
-            p=colamd(Htilda);
-            R=qr(Htilda(:,p),0);
-            b = Htilda' * Wsqrt * (z-h);
-            dx(p,:) = R'*R\(b(p,:)) ;   
-        otherwise
-    end;
-    time = time + toc;
+    if H_decoupled == 0
+        switch linsolver
+            case 1 % Direct inverse
+                % 4. Compute G(x(k))
+                G = H' * W * H;  
+                % 5. Compute right hand side g(x(k))
+                g = -(H')*W*(z-h);
+                dx = -inv(G)*g;
+            case 2 % Cholesky
+                % 4. Compute G(x(k))
+                G = H' * W * H;  
+                % 5. Compute right hand side g(x(k))
+                g = -(H')*W*(z-h);
+                dx = -G\g;
+            case 3 % Orthogonal Decomposition
+                Htilda = Wsqrt*H;
+                [Q,R,e]=qr(Htilda,0);
+                b = Wsqrt*(z-h);
+                dx(e,:) = R\(Q'*b);
+            case 4 % Hybrid
+                Htilda = Wsqrt*H;
+                p=colamd(Htilda);
+                R=qr(Htilda(:,p),0);
+                b = Htilda' * Wsqrt * (z-h);
+                dx(p,:) = R'*R\(b(p,:)) ;   
+            otherwise
+        end;
+        time = time + toc;
+
+        if max(abs(dx)) <= eps_tol    
+            convergence = 1;
+            eps_all = abs(dx);
+            it_num = i;
+            break;
+        else
+            % [ Theta; V ] - First index is Bus 1 reference.
+            theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx(1:size(theta,1)-1,1);
+            V = V + dx(size(theta,1):size(dx,1),1);
+        end;
+    elseif H_decoupled == 1
+        %constructing struct with measurement indices
+        
+        %Active Power Components
+        H_aa = [H(N_meas_pos.N_meas_V+1:N_meas_pos.N_meas_Pinj,1:topo.nBus-1); ...
+                H(N_meas_pos.N_meas_Qinj+1:N_meas_pos.N_meas_Pji,1:topo.nBus-1)];
+
+        %Reactive Power Components
+        H_rr = [H(1:N_meas_pos.N_meas_V,topo.nBus:2*topo.nBus-1); ...
+                H(N_meas_pos.N_meas_Pinj+1:N_meas_pos.N_meas_Qinj,topo.nBus:2*topo.nBus-1); ...
+                H(N_meas_pos.N_meas_Pji+1:N_meas_pos.N_meas_Qji,topo.nBus:2*topo.nBus-1)];
+        
+        W_a = 
+        
+        
+        
+        
+    end
     
-    if max(abs(dx)) <= eps_tol    
-        convergence = 1;
-        eps_all = abs(dx);
-        it_num = i;
-        break;
-    else
-        % [ Theta; V ] - First index is Bus 1 reference.
-        theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx(1:size(theta,1)-1,1);
-        V = V + dx(size(theta,1):size(dx,1),1);
-    end;
+
 end;
 end
 
