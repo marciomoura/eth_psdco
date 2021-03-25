@@ -6,9 +6,9 @@ load GoodMeasurement_14_bus.mat;
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
 Max_iter=100; %maximum number of GN iterations
-H_decoupled=1; %if 0, full H and 'normal' GN are used. If 1, decoupled H and fast decoupled GN are used
+H_decoupled=0; %if 0, full H and 'normal' GN are used. If 1, decoupled H and fast decoupled GN are used
 H_sparse=0; %if 1, H is created as a sparse matrix, if 0 - as a dense matrix
-linsolver=4;  %1 - matrix inverse, 2 - Cholesky, 3 - QR, 4 - Hybrid
+linsolver=2;  %1 - matrix inverse, 2 - Cholesky, 3 - QR, 4 - Hybrid
 
 %SOLTUION ALGORITHM STARTS HERE
 %getting Jacobian sparsity pattern (done only once)
@@ -59,7 +59,7 @@ end;
 msr_std = all_std(~isnan(all_std));
 
 % Diagonal elements of W is given by 1/(std^2)
-W = inv(diag(msr_std.^2));
+W = sparse(inv(diag(msr_std.^2)));
 Wsqrt = sqrt(W);
  
 % %choosing the initial point (use flat start)
