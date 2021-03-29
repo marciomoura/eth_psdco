@@ -7,7 +7,7 @@ load GoodMeasurement_1354_bus.mat;
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
 Max_iter=100; %maximum number of GN iterations
 H_decoupled=1; %if 0, full H and 'normal' GN are used. If 1, decoupled H and fast decoupled GN are used
-H_sparse=1; %if 1, H is created as a sparse matrix, if 0 - as a dense matrix
+H_sparse=0; %if 1, H is created as a sparse matrix, if 0 - as a dense matrix
 linsolver=1;  %1 - matrix inverse, 2 - Cholesky, 3 - QR, 4 - Hybrid
 
 %SOLTUION ALGORITHM STARTS HERE
@@ -91,6 +91,7 @@ fprintf('Number iterations: %d \n', it_num);
 
 %TASK 2: COMPUTING CONDITION NUMBERS AND DENSITY FACTORS OF MATRICES
 %STUDENT CODE 5
+% Set H_sparse = 1
 %Density factor of H
 [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
 DF_H = nnz(H)/numel(H)*100;
@@ -100,13 +101,20 @@ DF_G = nnz(G)/numel(G)*100;
 %Density factor of inverse of G
 Ginv = inv(G);
 DF_Ginv = nnz(Ginv)/numel(Ginv)*100;
+% uncomment next 3 lines for the density factor
 %Cholesky decompostion and density factor of L
-[L,p,S] = chol(G);
-DF_L = nnz(L)/numel(L)*100;
+% [L,p,S] = chol(G);
+% DF_L = nnz(L)/numel(L)*100;
 %QR decomposition and densitiy factor of R an Q
 [Q,R,e] = qr(H,0);
 DF_R = nnz(R)/numel(R)*100;
 DF_Q = nnz(Q)/numel(Q)*100;
+
+%Set H_sparse = 0
+%Condition number of G
+cn_G = cond(G);
+%Condition number of H & R
+cn_R = cond(R);
 
 
 
