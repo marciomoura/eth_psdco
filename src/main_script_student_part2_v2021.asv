@@ -1,6 +1,6 @@
 clc;clear;
 %LOADING DATASET
-load Dataset_B.mat;
+load Dataset_A.mat;
 
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm (using default options is recommended)
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
@@ -30,6 +30,7 @@ for i = 1:numel(fields)
         z = z(~isnan(z));
     end;
 end;
+
 
 %constructing the matrix of weights W and its square root Wsqrt using standard deviations provided in structure 'meas'
 %NOTE: matrices W and Wsqrt must be constructed in sparse format!!!
@@ -61,8 +62,10 @@ end;
 msr_std = all_std(~isnan(all_std));
 
 % Diagonal elements of W is given by 1/(std^2)
-W = sparse(inv(diag(msr_std.^2)));
+W = inv(diag(msr_std.^2));
 Wsqrt = sqrt(W);
+
+
 
 
 %% INITIAL SE SOLUTION
@@ -81,21 +84,9 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
 
 %% BAD DATA DETECTION
 %STUDENT CODE 4
-[ H ] = f_measJac_H_v2021(V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
-[ h ] = f_measFunc_h_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas);
-
-r = z - h;
-
-G = H' * W * H;  
-K = H * (G \ H') * W;
-S = round(diag(eye(size(K,1)) - K),12); %remove numerical instabilities which lead to negative values
-cov_R = S./(diag(W));
-
-
-r_norm = abs(r)./sqrt(cov_R); %there are infinity values because some zeroes are created in the covariance matrix(?)
 
 % Residual Analysis
-x_est = [V_SE0; theta_SE0(2:size(theta_SE0),1)]
+x_est = [V_SE0; theta_SE0]
 
 % Mr. Jacoby
 [ H ] = f_measJac_H_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
@@ -106,17 +97,12 @@ G = H'*W*H;
 % K = H * inv(G) * H' * W 
 K = H*inv(G)*(H')*W;
 
-% Sensitivity matrix S = (I-K)
-S = (eye(size(K)) - K)
-
 % e = z_delta-H*delta_x
-% error = H * estimated-state
-e = H*x_est - z;
+% r = (I-K)*e
+r = (eye(size(K))
 
-% residual
-r = S*e;
 
-plot(r)
+
 
 %% BAD DATA CORRECTION
 %STUDENT CODE 5
