@@ -8,9 +8,9 @@ num_iter = 1; %Number of Iterations for the computational time average
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
 Max_iter=100; %maximum number of GN iterations
-H_decoupled=1; %if 0, full H and 'normal' GN are used. If 1, decoupled H and fast decoupled GN are used
+H_decoupled=0; %if 0, full H and 'normal' GN are used. If 1, decoupled H and fast decoupled GN are used
 H_sparse=0; %if 1, H is created as a sparse matrix, if 0 - as a dense matrix
-linsolver=2;  %1 - matrix inverse, 2 - Cholesky, 3 - QR, 4 - Hybrid
+linsolver=4;  %1 - matrix inverse, 2 - Cholesky, 3 - QR, 4 - Hybrid
 
 %SOLTUION ALGORITHM STARTS HERE
 %getting Jacobian sparsity pattern (done only once)
@@ -115,21 +115,22 @@ DF_Q = nnz(Q)/numel(Q)*100;
 cn_G = cond(G);
 %Condition number of H & R
 cn_R = cond(R);
-
-
-% 
-% 
-% 
+ 
 % %TASK 3: COMPARING PERFORMANCE OF FULL/DECOUPLED GN
 % %STUDENT CODE 6
 % %NOTE: use the following function (the description of its inputs and
 % %outputs can be found inside the function)
 H_decoupled = 1;
-[ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+
+tot_time = 0;
+for n = 1 : num_iter
+    V = ones(topo.nBus,1);
+    theta= zeros(topo.nBus,1);
+    [ V, theta, eps_all, time, convergence, it_num] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
-
-
-
-
-
-
+    tot_time = tot_time + time;
+end;
+avg_time = tot_time/num_iter;
+fprintf('Total time: %.6f s\n', tot_time);
+fprintf('Average time: %.6f ms\n', avg_time*1000);
+fprintf('Number iterations: %d \n', it_num);

@@ -107,7 +107,7 @@ switch H_decoupled
         end
         
     case 1
-        tic;
+        H_sparse = 1;
         [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
         H_w = H' * W;
         G = H_w * H;
@@ -119,12 +119,14 @@ switch H_decoupled
         L_u = chol(G_u);
         for i = 1:Max_iter
             [ h ] = f_measFunc_h_v2021( V, theta, Y_bus, topo, ind_meas, N_meas);
+            tic;
             rhs = H_w * (z - h);
             rhs_th = rhs(1:topo.nBus-1);
             rhs_u = rhs(topo.nBus:2*topo.nBus-1);
             
             dx_th = L_th\(L_th'\rhs_th);
             dx_u = L_u\(L_u'\rhs_u);
+            time = time + toc;
             if max(abs(dx_u)) <= eps_tol && max(abs(dx_th)) <= eps_tol
                 convergence = 1;
                 it_num = i;
@@ -134,8 +136,7 @@ switch H_decoupled
                 theta(2:size(theta,1)) = theta(2:size(theta,1)) + dx_th;
                 V = V + dx_u;
             end
-        end
-        time = time + toc;
+        end        
     otherwise
 end
 end
