@@ -1,6 +1,9 @@
 clc;clear;
 %LOADING DATASET
-load Dataset_B.mat;
+filename = 'Dataset_C.mat'
+dataset = strrep(filename,'_',' ');
+dataset = strrep(dataset,'.mat','');
+load(filename);
 
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm (using default options is recommended)
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
@@ -94,7 +97,26 @@ ind = find(abs(diag(S)) < 10^(-12)); %indices of critical measurements
 
 r_norm = abs(r)./sqrt(diaCov); 
 r_norm(ind) = 0;
-plot(r_norm);
+
+
+% plot residuals
+max_value = max(r_norm);
+if max_value > 4.5
+    upper_limit = max_value + 0.5;
+else
+    upper_limit = 4.5;
+end;
+
+figure;
+bar(r_norm);
+hold on;
+plot(xlim,[4 4], 'r')
+ylim([0 upper_limit])
+xlabel('Measurement Index')
+ylabel('Residual Value')
+title(append('Bad data detection for ',dataset));
+hold off;
+
 %% BAD DATA CORRECTION
 %STUDENT CODE 5
 
@@ -111,7 +133,7 @@ else
         meas_name_mapping.(measType{i}) = char(measName(i+7));
     end
 
-
+    figure_index = 1;
     while any(r_norm > 4)
         indBad = find(r_norm == max(r_norm));
         measLength = 0;
@@ -159,6 +181,18 @@ else
     end
     
    fprintf("The measurement was bad but is now corrected and the result of the state estimation should be correct!\n");
+   
+   
+    figure;
+    bar(r_norm);
+    hold on;
+    plot(xlim,[4 4], 'r')
+    ylim([0 4.5])
+    xlabel('Measurement Index')
+    ylabel('Residual Value')
+    title(append('Residuals after removing bad data from ',dataset));
+    hold off;
+   
 end
 
 
