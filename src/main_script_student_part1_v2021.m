@@ -89,12 +89,34 @@ fprintf('Average time: %.6f ms\n', avg_time*1000);
 fprintf('Number iterations: %d \n', it_num);
 
 
-% 
-% 
-% 
 % %TASK 2: COMPUTING CONDITION NUMBERS AND DENSITY FACTORS OF MATRICES
 % %STUDENT CODE 5
-% 
+% Set H_sparse = 1
+%Density factor of H
+[ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
+DF_H = nnz(H)/numel(H)*100;
+%Density factor of G
+G = H'*W*H;
+DF_G = nnz(G)/numel(G)*100;
+%Density factor of inverse of G
+Ginv = inv(G);
+DF_Ginv = nnz(Ginv)/numel(Ginv)*100;
+% uncomment next 3 lines for the density factor
+%Cholesky decompostion and density factor of L
+% [L,p,S] = chol(G);
+% DF_L = nnz(L)/numel(L)*100;
+%QR decomposition and densitiy factor of R an Q
+[Q,R,e] = qr(H,0);
+DF_R = nnz(R)/numel(R)*100;
+DF_Q = nnz(Q)/numel(Q)*100;
+
+%Set H_sparse = 0
+%Condition number of G
+cn_G = cond(G);
+%Condition number of H & R
+cn_R = cond(R);
+
+
 % 
 % 
 % 
@@ -102,9 +124,9 @@ fprintf('Number iterations: %d \n', it_num);
 % %STUDENT CODE 6
 % %NOTE: use the following function (the description of its inputs and
 % %outputs can be found inside the function)
-
-% [ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
-%             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+H_decoupled = 1;
+[ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+            ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
 
 
 
