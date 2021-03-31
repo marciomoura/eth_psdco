@@ -1,12 +1,12 @@
 clc;clear;
 %LOADING DATASET
-load Dataset_A.mat;
+load Dataset_B.mat;
 
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm (using default options is recommended)
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
 Max_iter=100; %maximum number of GN iterations
 H_decoupled=0; %use full Jacobian matrix
-H_sparse=1; %use matrix in a sparse format
+H_sparse=0; %use matrix in a sparse format
 linsolver=2;  %use Cholesky
 
 
@@ -16,8 +16,6 @@ linsolver=2;  %use Cholesky
 
 %obtaining the admittance matrix in the compressed row form (done only once)
 Y_bus = f_Y_bus_compressed_v2021(topo);
-
-
 
 %constructing vector z, which is a vector of available measurements
 %NOTE: different types of measurements should be in the same order as in the handout
@@ -30,7 +28,6 @@ for i = 1:numel(fields)
         z = z(~isnan(z));
     end;
 end;
-
 
 %constructing the matrix of weights W and its square root Wsqrt using standard deviations provided in structure 'meas'
 %NOTE: matrices W and Wsqrt must be constructed in sparse format!!!
@@ -62,10 +59,8 @@ end;
 msr_std = all_std(~isnan(all_std));
 
 % Diagonal elements of W is given by 1/(std^2)
-W = inv(diag(msr_std.^2));
+W = sparse(inv(diag(msr_std.^2)));
 Wsqrt = sqrt(W);
-
-
 
 
 %% INITIAL SE SOLUTION
@@ -84,33 +79,88 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
 
 %% BAD DATA DETECTION
 %STUDENT CODE 4
+[ H ] = f_measJac_H_v2021(V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
+[ h ] = f_measFunc_h_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas);
 
-% Residual Analysis
-x_est = [V_SE0; theta_SE0(2:size(theta_SE0),1)]
-
-% Mr. Jacoby
-[ H ] = f_measJac_H_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
-
-% Gain Matrix
-G = H'*W*H;  
-
-% K = H * inv(G) * H' * W 
-K = H*inv(G)*(H')*W;
-
-% Sensitivity matrix S = (I-K)
-S = (eye(size(K)) - K)
-
-% e = z_delta-H*delta_x
-% error = H * estimated-state
-e = H*x_est - z;
-
-% residual
+e = z - h;
+G = H' * W * H;  
+K = H * (G \ H') * W;
+S = eye(size(K,1)) - K;
+cov_R = S*inv(W);
+diaCov = diag(cov_R);
 r = S*e;
 
-plot(r)
+ind = find(abs(diag(S)) < 10^(-12)); %indices of critical measurements
 
+r_norm = abs(r)./sqrt(diaCov); 
+r_norm(ind) = 0;
+plot(r_norm);
 %% BAD DATA CORRECTION
 %STUDENT CODE 5
+
+%Test for meas.warning and residuals
+if ~meas.warning && ~any(r_norm > 4)
+    fprintf("The measurement is good and the result of the state estimation should be fine!\n");
+elseif meas.warning && ~any(r_norm > 4)
+    fprintf("The measurement is bad and the result of the state estimation could not be corrected!\n");
+else
+    measType = fieldnames(ind_meas);
+    measName = fieldnames(meas);
+    meas_name_mapping=struct();
+    for i=1:numel(measType)
+        meas_name_mapping.(measType{i}) = char(measName(i+7));
+    end
+
+
+    while any(r_norm > 4)
+        indBad = find(r_norm == max(r_norm));
+        measLength = 0;
+        for i=1:numel(measType)
+            if indBad > measLength
+                measLength = measLength + length(ind_meas.(measType{i}));
+                measName = measType{i};
+            else
+                measLength = measLength - length(ind_meas.(measName));
+                break;
+            end
+        end
+        fprintf(strcat('Removed Measurement: ', measName, " ", num2str(ind_meas.(measName)(indBad-measLength)), "\n"));
+        %Set bad measurement to NaN
+        meas.(meas_name_mapping.(measName))(ind_meas.(measName)(indBad-measLength)) = NaN;
+
+        %Get new sparsity pattern etc.
+        [topo, ind_meas, N_meas]=f_meas_indices_and_H_sparsity_pattern_v2021(topo, meas);
+
+        %Update measurements and W
+        z(indBad) = []; %only choose good measurement
+        W(indBad,:) = [];
+        W(:,indBad) = [];
+        Wsqrt(indBad,:) = [];
+        Wsqrt(:,indBad) = [];
+
+        %run SE
+        [ V_SE0, theta_SE0, ~, ~, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+        ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+
+        [ H ] = f_measJac_H_v2021(V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
+        [ h ] = f_measFunc_h_v2021( V_SE0, theta_SE0, Y_bus, topo, ind_meas, N_meas);
+
+        e = z - h;
+        G = H' * W * H;  
+        K = H * (G \ H') * W;
+        S = eye(size(K,1)) - K;
+        cov_R = S*inv(W);
+        diaCov = diag(cov_R);
+        r = S*e;
+
+        ind = find(abs(diag(S)) < 10^(-12)); %indices of critical measurements
+        r_norm = abs(r)./sqrt(diaCov); 
+        r_norm(ind) = 0;
+    end
+    
+   fprintf("The measurement was bad but is now corrected and the result of the state estimation should be correct!\n");
+end
+
 
 
 
