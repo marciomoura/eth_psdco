@@ -1,6 +1,6 @@
-clc;clear;
+clc;clear;close all;
 %LOADING DATASET
-filename = 'Dataset_C.mat'
+filename = 'Dataset_D.mat'
 dataset = strrep(filename,'_',' ');
 dataset = strrep(dataset,'.mat','');
 load(filename);
@@ -79,6 +79,10 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
     ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
 
 
+% store to plot voltage/angle magnitudes
+plt_v_se0 = V_SE0;
+plt_theta_se0 = theta_SE0;
+
 
 %% BAD DATA DETECTION
 %STUDENT CODE 4
@@ -123,6 +127,16 @@ hold off;
 %Test for meas.warning and residuals
 if ~meas.warning && ~any(r_norm > 4)
     fprintf("The measurement is good and the result of the state estimation should be fine!\n");
+    
+    figure;
+    subplot(2,1,1);
+    plot(1:1:size(plt_v_se0),plt_v_se0)
+    legend('Voltages');
+    grid on;
+    subplot(2,1,2);
+    plot(1:1:size(plt_theta_se0),plt_theta_se0);
+    legend('Angles');
+    grid on;
 elseif meas.warning && ~any(r_norm > 4)
     fprintf("The measurement is bad and the result of the state estimation could not be corrected!\n");
 else
@@ -132,8 +146,9 @@ else
     for i=1:numel(measType)
         meas_name_mapping.(measType{i}) = char(measName(i+7));
     end
-
-    figure_index = 1;
+    
+    plt_v_se1 = [];
+    plt_theta_se1 = [];
     while any(r_norm > 4)
         indBad = find(r_norm == max(r_norm));
         measLength = 0;
@@ -178,6 +193,12 @@ else
         ind = find(abs(diag(S)) < 10^(-12)); %indices of critical measurements
         r_norm = abs(r)./sqrt(diaCov); 
         r_norm(ind) = 0;
+    
+        % store to plot voltage/angle magnitudes
+        plt_v_se1 = V_SE0;
+        plt_theta_se1 = theta_SE0;
+
+    
     end
     
    fprintf("The measurement was bad but is now corrected and the result of the state estimation should be correct!\n");
@@ -192,8 +213,22 @@ else
     ylabel('Residual Value')
     title(append('Residuals after removing bad data from ',dataset));
     hold off;
-   
+    
+    figure;
+    subplot(2,1,1);
+    plot(1:1:size(plt_v_se0),plt_v_se0,1:1:size(plt_v_se1),plt_v_se1);
+    legend('Voltage w/ wrong measurement','Voltage after correction');
+    xlim([1 inf]);
+    grid on;
+    
+    subplot(2,1,2);
+    plot(1:1:size(plt_theta_se0),plt_theta_se0,1:1:size(plt_theta_se1),plt_theta_se1);
+    xlim([1 inf]);
+    legend('Angle w/ wrong measurement','Angle after correction');
+    grid on;
 end
+
+
 
 
 

@@ -1,7 +1,9 @@
 clear;
 %LOADING THE DATA
-%load GoodMeasurement_14_bus.mat;
-load GoodMeasurement_1354_bus.mat;
+load GoodMeasurement_14_bus.mat;
+%load GoodMeasurement_1354_bus.mat;
+
+task = 1; %3
 
 num_iter = 1; %Number of Iterations for the computational time average
 
@@ -75,19 +77,18 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
 % outputs can be found inside the function)
 % [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
 %             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );         
-tot_time = 0;
-for n = 1 : num_iter
-    V = ones(topo.nBus,1);
-    theta= zeros(topo.nBus,1);
-    [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
-             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
-    tot_time = tot_time + time;
-end;
-avg_time = tot_time/num_iter;
-fprintf('Total time: %.6f s\n', tot_time);
-fprintf('Average time: %.6f ms\n', avg_time*1000);
-fprintf('Number iterations: %d \n', it_num);
-
+% tot_time = 0;
+% for n = 1 : num_iter
+%     V = ones(topo.nBus,1);
+%     theta= zeros(topo.nBus,1);
+%     [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+%              ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+%     tot_time = tot_time + time;
+% end;
+% avg_time = tot_time/num_iter;
+% fprintf('Total time: %.6f s\n', tot_time);
+% fprintf('Average time: %.6f ms\n', avg_time*1000);
+% fprintf('Number iterations: %d \n', it_num);
 
 % %TASK 2: COMPUTING CONDITION NUMBERS AND DENSITY FACTORS OF MATRICES
 % %STUDENT CODE 5
@@ -116,10 +117,6 @@ cn_G = cond(G);
 %Condition number of H & R
 cn_R = cond(R);
 
-
-% 
-% 
-% 
 % %TASK 3: COMPARING PERFORMANCE OF FULL/DECOUPLED GN
 % %STUDENT CODE 6
 % %NOTE: use the following function (the description of its inputs and
@@ -127,6 +124,20 @@ cn_R = cond(R);
 H_decoupled = 1;
 [ V, theta, eps_all, time, convergence ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+
+        
+tot_time = 0;
+for n = 1 : num_iter
+    V = ones(topo.nBus,1);
+    theta= zeros(topo.nBus,1);
+    [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );
+    tot_time = tot_time + time;
+end;
+avg_time = tot_time/num_iter;
+fprintf('Total time: %.6f s\n', tot_time);
+fprintf('Average time: %.6f ms\n', avg_time*1000);
+fprintf('Number iterations: %d \n', it_num);
 
 
 
