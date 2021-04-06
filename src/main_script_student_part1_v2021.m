@@ -3,10 +3,6 @@ clear;
 load GoodMeasurement_14_bus.mat;
 %load GoodMeasurement_1354_bus.mat;
 
-task = 1; %3
-
-num_iter = 1; %Number of Iterations for the computational time average
-
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))
 Max_iter=100; %maximum number of GN iterations
@@ -71,13 +67,16 @@ Wsqrt = sqrt(W);
 V = ones(topo.nBus,1);
 theta= zeros(topo.nBus,1); % bus 1 is used as reference
  
+%%
 % %TASK 1: SOLVING SE PROBLEM WITH GN ALGORITHM
 % %STUDENT CODE 4
 % %NOTE: use the following function (the description of its inputs and
 % outputs can be found inside the function)
-% [ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
-%             ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );         
+[ V, theta, eps_all, time, convergence, it_num ] = f_SE_NR_algorithm_v2021 ( V, theta, topo, Y_bus, z, W, Wsqrt, ...
+            ind_meas, N_meas, eps_tol, Max_iter, H_decoupled, H_sparse, linsolver );         
+
 % tot_time = 0;
+% num_iter = 1; %Number of Iterations for the computational time average
 % for n = 1 : num_iter
 %     V = ones(topo.nBus,1);
 %     theta= zeros(topo.nBus,1);
@@ -90,18 +89,23 @@ theta= zeros(topo.nBus,1); % bus 1 is used as reference
 % fprintf('Average time: %.6f ms\n', avg_time*1000);
 % fprintf('Number iterations: %d \n', it_num);
 
+%%
 % %TASK 2: COMPUTING CONDITION NUMBERS AND DENSITY FACTORS OF MATRICES
 % %STUDENT CODE 5
+
 % Set H_sparse = 1
 %Density factor of H
 [ H ] = f_measJac_H_v2021( V, theta, Y_bus, topo, ind_meas, N_meas, H_decoupled, H_sparse);
 DF_H = nnz(H)/numel(H)*100;
+
 %Density factor of G
 G = H'*W*H;
 DF_G = nnz(G)/numel(G)*100;
+
 %Density factor of inverse of G
 Ginv = inv(G);
 DF_Ginv = nnz(Ginv)/numel(Ginv)*100;
+
 % uncomment next 3 lines for the density factor
 %Cholesky decompostion and density factor of L
 % [L,p,S] = chol(G);
@@ -117,12 +121,14 @@ cn_G = cond(G);
 %Condition number of H & R
 cn_R = cond(R);
 
+%%
 % %TASK 3: COMPARING PERFORMANCE OF FULL/DECOUPLED GN
 % %STUDENT CODE 6
 % %NOTE: use the following function (the description of its inputs and
 % %outputs can be found inside the function)
 H_decoupled = 1;
-        
+
+num_iter = 1;
 tot_time = 0;
 for n = 1 : num_iter
     V = ones(topo.nBus,1);
