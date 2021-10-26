@@ -1,6 +1,6 @@
 clc;clear;
 %LOADING DATASET
-load Dataset_B.mat;
+load Dataset_D.mat;
 
 %HERE COME USER-DEFINED PARAMETERS OF GN algorithm (using default options is recommended)
 eps_tol=10^-5;  %stopping criterion for max(abs(delta_x))

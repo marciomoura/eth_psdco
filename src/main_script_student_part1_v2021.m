@@ -1,7 +1,7 @@
 clear;
 %LOADING THE DATA
-%load GoodMeasurement_14_bus.mat;
-load GoodMeasurement_1354_bus.mat;
+load GoodMeasurement_14_bus.mat;
+%load GoodMeasurement_1354_bus.mat;
 
 num_iter = 1; %Number of Iterations for the computational time average
 
